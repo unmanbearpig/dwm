@@ -69,7 +69,7 @@ static Key keys[] = {
   { 0,                            XF86XK_AudioMute, spawn,   {.v = mutecmd } },
   { MODKEY|ControlMask,           XK_m,      spawn,          {.v = mutecmd } },
   { MODKEY,                       XK_f,      togglefullscr,  {0} },
-  { MODKEY|ControlMask,           XK_f,      zoom,           {0} },
+  { MODKEY,                       XK_m,      zoom,           {0} },
   { MODKEY|ShiftMask,             XK_f,      togglefloating, {0} },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_n,      focusstack,     {.i = +1 } },
@@ -82,12 +82,12 @@ static Key keys[] = {
 	{ MODKEY,                       XK_s,      setmfact,       {.f = +0.05} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY,                       XK_q,      killclient,     {0} },
-	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
-	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
+	{ MODKEY,                       XK_comma,  setlayout,      {.v = &layouts[0]} },
+	{ MODKEY,                       XK_period, setlayout,      {.v = &layouts[2]} },
 	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
 	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
-	{ MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
-	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
+	/* { MODKEY,                       XK_comma,  focusmon,       {.i = -1 } }, */
+	/* { MODKEY,                       XK_period, focusmon,       {.i = +1 } }, */
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
 	TAGKEYS(                        XK_1,                      0)
