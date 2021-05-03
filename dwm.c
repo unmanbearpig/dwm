@@ -271,6 +271,8 @@ static Drw *drw;
 static Monitor *mons, *selmon;
 static Window root, wmcheckwin;
 
+/* static int log_fd = -1; */
+
 /* configuration, allows nested code to access above variables */
 #include "config.h"
 
@@ -342,10 +344,12 @@ applysizehints(Client *c, int *x, int *y, int *w, int *h, int interact)
 		if (*y + *h + 2 * c->bw <= m->wy)
 			*y = m->wy;
 	}
+
 	if (*h < bh)
 		*h = bh;
 	if (*w < bh)
 		*w = bh;
+
 	if (resizehints || c->isfloating || !c->mon->lt[c->mon->sellt]->arrange) {
 		/* see last two sentences in ICCCM 4.1.2.3 */
 		baseismin = c->basew == c->minw && c->baseh == c->minh;
@@ -1051,8 +1055,10 @@ manage(Window w, XWindowAttributes *wa)
 
 	if (c->x + WIDTH(c) > c->mon->mx + c->mon->mw)
 		c->x = c->mon->mx + c->mon->mw - WIDTH(c);
+
 	if (c->y + HEIGHT(c) > c->mon->my + c->mon->mh)
 		c->y = c->mon->my + c->mon->mh - HEIGHT(c);
+
 	c->x = MAX(c->x, c->mon->mx);
 	/* only fix client y-offset, if the client center might cover the bar */
 	c->y = MAX(c->y, ((c->mon->by == c->mon->my) && (c->x + (c->w / 2) >= c->mon->wx)
@@ -1287,19 +1293,57 @@ resizeclient(Client *c, int x, int y, int w, int h)
 {
 	XWindowChanges wc;
 
-	c->oldx = c->x; c->x = wc.x = x;
+  /* patch: https://dwm.suckless.org/patches/removeborder/dwm-removeborder-20200520-f09418b.diff */
+  unsigned int n;
+  Client *nbc;
+
+	wc.border_width = c->bw;
+
+  /* modified patch: https://dwm.suckless.org/patches/removeborder/dwm-removeborder-20200520-f09418b.diff */
+  for (n = 0, nbc = nexttiled(selmon->clients); nbc; nbc = nexttiled(nbc->next), n++);
+
+  if (c->isfloating || selmon->lt[selmon->sellt]->arrange == NULL) {
+    /*
+      @unmanbearpig:
+       Attempt at a fix for windows being 2 pixels smaller than the monitor
+       size when there is only one window with no bar.
+       It bothers me because it affects video quality when watching 1080p video
+       on a 1080p screen. To have it sharp the window must be exactly 1920x1080.
+
+       The problem is that even though the removeborder patch removes the borders,
+       it doesn't actually affect the window size.
+       My fix does that but introduces a bug that makes the window continue to have
+       no borders even when I create other windows.
+       I've also added some logging that uses /tmp/dwm.log file to report resizes.
+       It might be commented out. Look for log_fd global variable.
+     */
+    c->bw = borderpx;
+  } else {
+    if (selmon->lt[selmon->sellt]->arrange == monocle || n == 1) {
+      /* @nmanbearpig: continuation of my fix for 2 pixel empty size */
+      c->bw = 0;
+      /* @unmanbearpig: end of my fix */
+      wc.border_width = 0;
+    }
+  }
+
+  c->oldx = c->x; c->x = wc.x = x;
 	c->oldy = c->y; c->y = wc.y = y;
 	c->oldw = c->w; c->w = wc.width = w;
 	c->oldh = c->h; c->h = wc.height = h;
-	wc.border_width = c->bw;
-	if (((nexttiled(c->mon->clients) == c && !nexttiled(c->next))
-	    || &monocle == c->mon->lt[c->mon->sellt]->arrange)
-	    && !c->isfullscreen && !c->isfloating
-	    && NULL != c->mon->lt[c->mon->sellt]->arrange) {
-		c->w = wc.width += c->bw * 2;
-		c->h = wc.height += c->bw * 2;
-		wc.border_width = 0;
-	}
+
+  /* patch: https://dwm.suckless.org/patches/noborder/dwm-noborderfloatingfix-6.2.diff */
+	/* if (((nexttiled(c->mon->clients) == c && !nexttiled(c->next)) */
+	/*     || &monocle == c->mon->lt[c->mon->sellt]->arrange) */
+	/*     && !c->isfullscreen && !c->isfloating */
+	/*     && NULL != c->mon->lt[c->mon->sellt]->arrange) { */
+	/* 	c->w = wc.width += c->bw * 2; */
+	/* 	c->h = wc.height += c->bw * 2; */
+	/* 	wc.border_width = 0; */
+	/* } */
+
+  /* dprintf(log_fd, "resizing x=%d y=%d w=%d h=%d border=%d\n", wc.x, wc.y, wc.width, wc.height, wc.border_width); */
+
 	XConfigureWindow(dpy, c->win, CWX|CWY|CWWidth|CWHeight|CWBorderWidth, &wc);
 	configure(c);
 	XSync(dpy, False);
@@ -2151,9 +2195,17 @@ zoom(const Arg *arg)
 	pop(c);
 }
 
+/* @unmanbearpig: logging stuff */
+/* #include <sys/stat.h> */
+
 int
 main(int argc, char *argv[])
 {
+  /* @unmanbearpig: logging stuff */
+  /* log_fd = open("/tmp/dwm.log", 1 | 64 | 1024); */
+  /* dprintf(log_fd, "test\n"); */
+  /* fsync(log_fd); */
+
 	if (argc == 2 && !strcmp("-v", argv[1]))
 		die("dwm-"VERSION);
 	else if (argc != 1)
