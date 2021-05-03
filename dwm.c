@@ -1332,6 +1332,8 @@ resizeclient(Client *c, int x, int y, int w, int h)
 	c->oldw = c->w; c->w = wc.width = w;
 	c->oldh = c->h; c->h = wc.height = h;
 
+  /* end of modified patch */
+
   /* patch: https://dwm.suckless.org/patches/noborder/dwm-noborderfloatingfix-6.2.diff */
 	/* if (((nexttiled(c->mon->clients) == c && !nexttiled(c->next)) */
 	/*     || &monocle == c->mon->lt[c->mon->sellt]->arrange) */
