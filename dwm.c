@@ -1064,22 +1064,31 @@ manage(Window w, XWindowAttributes *wa)
 	/* only fix client y-offset, if the client center might cover the bar */
 	c->y = MAX(c->y, ((c->mon->by == c->mon->my) && (c->x + (c->w / 2) >= c->mon->wx)
 		&& (c->x + (c->w / 2) < c->mon->wx + c->mon->ww)) ? bh : c->mon->my);
-	c->bw = borderpx;
+
+	if (!c->isfloating)
+		c->isfloating = c->oldstate = trans != None || c->isfixed;
+
+  if (c->isfloating) {
+    c->bw = borderpx_floating;
+  } else {
+    c->bw = borderpx;
+  }
 
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
 	XSetWindowBorder(dpy, w, scheme[SchemeNorm][ColBorder].pixel);
+
 	configure(c); /* propagates border_width, if size doesn't change */
 	updatewindowtype(c);
 	updatesizehints(c);
 	updatewmhints(c);
 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
 	grabbuttons(c, 0);
-	if (!c->isfloating)
-		c->isfloating = c->oldstate = trans != None || c->isfixed;
+
 	if (c->isfloating)
 		XRaiseWindow(dpy, c->win);
-	attach(c);
+
+  attach(c);
 	attachstack(c);
 	XChangeProperty(dpy, root, netatom[NetClientList], XA_WINDOW, 32, PropModeAppend,
 		(unsigned char *) &(c->win), 1);
@@ -1344,7 +1353,12 @@ resizeclient(Client *c, int x, int y, int w, int h)
        I've also added some logging that uses /tmp/dwm.log file to report resizes.
        It might be commented out. Look for log_fd global variable.
      */
-    c->bw = borderpx;
+
+    if (c->isfloating) {
+      c->bw = borderpx_floating;
+    } else {
+      c->bw = borderpx;
+    }
   } else {
     if (selmon->lt[selmon->sellt]->arrange == monocle || n == 1) {
       /* @nmanbearpig: continuation of my fix for 2 pixel empty size */
@@ -1394,10 +1408,17 @@ resizemouse(const Arg *arg)
 	restack(selmon);
 	ocx = c->x;
 	ocy = c->y;
+
 	if (XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
 		None, cursor[CurResize]->cursor, CurrentTime) != GrabSuccess)
 		return;
-	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
+
+  // This is broken for some reason and I don't really see a point in that
+  //  thing anyway.
+  // I guess it's supposed to move the mouse to the window corner, but
+  //   I'm fine with resizing the window to the current mouse cursor
+	// XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
+
 	do {
 		XMaskEvent(dpy, MOUSEMASK|ExposureMask|SubstructureRedirectMask, &ev);
 		switch(ev.type) {
@@ -1425,7 +1446,11 @@ resizemouse(const Arg *arg)
 			break;
 		}
 	} while (ev.type != ButtonRelease);
-	XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
+
+  // This thing is broken
+  // I guess it's supposed to return the cursor somewhere after resize
+	// XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1, c->h + c->bw - 1);
+
 	XUngrabPointer(dpy, CurrentTime);
 	while (XCheckMaskEvent(dpy, EnterWindowMask, &ev));
 	if ((m = recttomon(c->x, c->y, c->w, c->h)) != selmon) {
@@ -1805,10 +1830,18 @@ togglefloating(const Arg *arg)
 		return;
 	if (selmon->sel->isfullscreen) /* no support for fullscreen windows */
 		return;
+
 	selmon->sel->isfloating = !selmon->sel->isfloating || selmon->sel->isfixed;
-	if (selmon->sel->isfloating)
+
+  if (selmon->sel->isfloating) {
+    selmon->sel->bw = borderpx_floating;
+  } else {
+    selmon->sel->bw = borderpx;
+  }
+	if (selmon->sel->isfloating) {
 		resize(selmon->sel, selmon->sel->x, selmon->sel->y,
 			selmon->sel->w, selmon->sel->h, 0);
+  }
 	arrange(selmon);
 }
 
