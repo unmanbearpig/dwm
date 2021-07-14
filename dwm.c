@@ -721,6 +721,7 @@ drawbar(Monitor *m)
 		if (c->isurgent)
 			urg |= c->tags;
 	}
+  /* drawing tags */
 	x = 0;
 	for (i = 0; i < LENGTH(tags); i++) {
 		w = TEXTW(tags[i]);
@@ -732,9 +733,18 @@ drawbar(Monitor *m)
 				urg & 1 << i);
 		x += w;
 	}
+  /* drawing current layout */
 	w = blw = TEXTW(m->ltsymbol);
 	drw_setscheme(drw, scheme[SchemeNorm]);
 	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
+
+  /* @unmanbearpig draw nmaster */
+  char nmaster_text[16] = { 0 };
+  snprintf(nmaster_text, sizeof(nmaster_text), "[%d]", m->nmaster);
+  int w_nmaster = TEXTW(nmaster_text);
+  drw_setscheme(drw, scheme[SchemeNorm]);
+  drw_text(drw, x, 0, w_nmaster, bh, lrpad / 2, nmaster_text, 0);
+  x += w_nmaster;
 
 	if ((w = m->ww - tw - x) > bh) {
 		if (m->sel) {
@@ -983,6 +993,8 @@ incnmaster(const Arg *arg)
 {
 	selmon->nmaster = MAX(selmon->nmaster + arg->i, 0);
 	arrange(selmon);
+  // @unmanbearpig: redraw the bars to update the nmaster number in the bar
+  drawbars();
 }
 
 #ifdef XINERAMA
