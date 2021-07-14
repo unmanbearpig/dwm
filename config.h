@@ -9,7 +9,7 @@ static const unsigned int borderpx  = 0;
 /* border pixel of windows only for floating windows */
 static const unsigned int borderpx_floating  = 1;
 
-static const unsigned int snap      = 32;       /* snap pixel */
+static const unsigned int snap      = 8;        /* snap pixel */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
 static const char *fonts[]          = { "xos4 Terminus:pixelsize=20:autohint=false:antialias=false:minspace=true" };
@@ -40,7 +40,7 @@ static const Rule rules[] = {
 /* layout(s) */
 static const float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
 static const int nmaster     = 1;    /* number of clients in master area */
-static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
+static const int resizehints = 0;    /* 1 means respect size hints in tiled resizals */
 
 static const Layout layouts[] = {
 	/* symbol     arrange function */
@@ -64,7 +64,8 @@ static const Layout layouts[] = {
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, NULL };
-static const char *termcmd[]  = { "st", "bash", "--login", NULL };
+static const char *termcmd_main[]  = { "xterm", NULL };
+static const char *termcmd_alt[]  = { "st", "bash", "--login", NULL };
 static const char *browsercmd[]  = { "firefox-trunk", NULL };
 static const char *mpvpastecmd[]  = { "mpvpaste", NULL };
 static const char *mutecmd[]  = { "amixer", "-q", "set", "Master", "toggle", NULL };
@@ -77,7 +78,8 @@ static const char *voldowncmd[]  = { "amixer", "set", "Master", "1dB-", NULL };
 static Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,                       XK_x,      spawn,               {.v = dmenucmd } },
-	{ MODKEY,                       XK_Return, spawn,               {.v = termcmd } },
+	{ MODKEY,                       XK_Return, spawn,               {.v = termcmd_main } },
+  { MODKEY|ShiftMask,             XK_Return, spawn,               {.v = termcmd_alt } },
   { MODKEY|ShiftMask,             XK_Return, spawn,               {.v = browsercmd } },
   { MODKEY|ControlMask,           XK_Return, spawn,               {.v = mpvpastecmd } },
   { 0,                            XF86XK_AudioMute, spawn,        {.v = mutecmd } },
@@ -126,7 +128,7 @@ static Button buttons[] = {
 	{ ClkLtSymbol,          0,              Button1,        setlayout,      {0} },
 	{ ClkLtSymbol,          0,              Button3,        setlayout,      {.v = &layouts[2]} },
 	{ ClkWinTitle,          0,              Button2,        zoom,           {0} },
-	{ ClkStatusText,        0,              Button2,        spawn,          {.v = termcmd } },
+	{ ClkStatusText,        0,              Button2,        spawn,          {.v = termcmd_main } },
 	{ ClkClientWin,         MODKEY,         Button1,        movemouse,      {0} },
 	{ ClkClientWin,         MODKEY,         Button2,        togglefloating, {0} },
 	{ ClkClientWin,         MODKEY,         Button3,        resizemouse,    {0} },
